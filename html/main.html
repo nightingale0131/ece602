@@ -1,0 +1,533 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Computing Large Convex Regions of Obstacle-Free Space through SemiDefinite Programming</title><meta name="generator" content="MATLAB 9.4"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2018-04-22"><meta name="DC.source" content="main.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h1>Computing Large Convex Regions of Obstacle-Free Space through SemiDefinite Programming</h1><!--introduction--><p>Report written by: Buu Phan and Florence Tsang</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Introduction to the Problem</a></li><li><a href="#2">Problem Formulation</a></li><li><a href="#3">Proposed Solution</a></li><li><a href="#4">Part 1 - Find separating hyperplanes</a></li><li><a href="#5">Part 2 - Calculate the inscribed ellipsoid</a></li><li><a href="#6">Data Synthesis</a></li><li><a href="#7">Implemented Solution</a></li><li><a href="#9">Results</a></li><li><a href="#11">Area of the ellipse for each iteration</a></li><li><a href="#12">Analysis and Conclusions</a></li><li><a href="#13">References</a></li><li><a href="#14">Custom functions</a></li><li><a href="#15">External programs</a></li></ul></div><h2 id="1">Introduction to the Problem</h2><p>In path planners for robots, it is often advantageous to be able to quickly identify large regions of obstacle free space that the robot can freely move through. This is especially important for robots that need to operate in cluttered environments. The exploration of a solution to this problem by [1] was largely motivated by the problem of finding obstacle-free regions a bi-pedal robot could step on. The proposed algorithm assumes that the environment consists of convex obstacles, which is a reasonable assumption since there are many methods available to decompose obstacles into convex shapes. A high level of detail is not needed. It also assumes that there will be a human operator (or another algorithm) to help select the general location of where this obstacle-free region should be.</p><p>Although we only show the 2D implementation of this algorithm, it is applicable in 3D space as well.</p><h2 id="2">Problem Formulation</h2><p>The general algorithm consists of simultaneously maximizing a polyhedral and an inscribed ellipsoid in the specified location. The polyhedral is composed of the intersection of multiple halfspaces: <img src="main_eq06207615651104457325.png" alt="$P=\{x|Ax\leq b\}$"> and the ellipsoid is represented as an image of an euclidean unit ball: <img src="main_eq13281383093856573215.png" alt="$$\mathcal{E}(C,d)=\{x=C\tilde{x}+d|\|\tilde{x}\|_2\leq 1\} $$">. Given this, we are attempting to solve the following problem:</p><p><img vspace="5" hspace="5" src="primal_problem.png" alt=""> </p><p>The objective function describes how 'big' the ellipsoid is. By maximizing the inscribed ellipsoid, we are by proxy, maximizing the polyhedral that contains the obstacle-free space. The first constraint prevents the polyhedral from containing any vertices of all obstacles, as none of their vertices should lie in the polyhedral. The second constraint ensures that the ellipsoid does not extend past the polyhedral.</p><h2 id="3">Proposed Solution</h2><p>Instead of directly solving the above problem, which is non-convex, [1] proposes to iteratively find an obstacle-free polyhedral, find the maximal inscribed ellipsoid, and repeat until the ellipsoid no longer grows more than a specified threshold. [1] has nicknamed this procedure as IRIS (Iterative Regional Inflation by Semidefinite Programming). Even though IRIS does not guarantee it will find the largest obstacle-free convex space in a given environment, it does guarantee convergence if the environment is bounded. Because the ellipsoid will not increase past the environment boundaries.</p><p>The solution has two major parts: 1) Find the hyperplanes that separate the given ellipsoid from all the obstacles (resulting in an obstacle-free polyhedral), and 2) find the inscribed ellipsoid in this polyhedral. This procedure will be repeated until the growth of the ellipsoid falls below our specified threshold. Growth is measured by:</p><p><img src="main_eq11089625966227971642.png" alt="$$growth=\frac{\det C_i - \det C_{i-1}}{\det C_{i-1}}$$"></p><p>Where <img src="main_eq06721991517679324891.png" alt="$C_i$"> defines the newly inscribed ellipsoid and <img src="main_eq07846092176802199982.png" alt="$C_{i-1}$"> defines the inscribed ellipsoid from the previous iteration. <img src="main_eq04419372879186140686.png" alt="$\det C$"> is linearly related to the area, thus changes in <img src="main_eq04419372879186140686.png" alt="$\det C$"> is proportional to the change in area of the ellipsoid.</p><p>More details of each portion of the solutions are given in the following sections.</p><h2 id="4">Part 1 - Find separating hyperplanes</h2><p>Given an ellipsoid defined by <img src="main_eq17142497785205038496.png" alt="$Cx+d$">, we need to find the closest point <i>x_star</i> to the ellipsoid from the given set of obstacles, then define a hyperplane that separates the ellipsoid and the obstacle that <i>x_star</i> is on.</p><p>Since the ellipsoid is defined as an image of the unit ball, the inverse of this image can be defined as:</p><p><img vspace="5" hspace="5" src="transformed_spaces.png" alt=""> </p><p>After this transformation, the closest point on an obstacle to the ellipsoid in the ellipse space, will be the closest point to the origin in the ball space. This problem can be formally constructed in the following way:</p><p><img vspace="5" hspace="5" src="min_distance_problem.png" alt=""> </p><p>The constraints state that <img src="main_eq07144901297932527568.png" alt="$\tilde{x}$"> must be a convex combination of the vertices in obstacle <img src="main_eq07225361342133155126.png" alt="$j$">. It ensures that <img src="main_eq07144901297932527568.png" alt="$\tilde{x}$"> must be in the closure of obstacle <img src="main_eq07225361342133155126.png" alt="$j$"> while minimizing the norm of <img src="main_eq07144901297932527568.png" alt="$\tilde{x}$">. This results in the optimal point <img src="main_eq10084052107406284721.png" alt="$\tilde{x}^*$">. Then we simply transform it back into the ellipse space using <img src="main_eq18327336225184106839.png" alt="$x^*=C\tilde{x}^*+d$">.</p><p>We define the problem in cvx as follows:</p><pre class="language-matlab">
+<span class="keyword">function</span> [ x ] = ClosestPointOnObstacle( C,d,O,i )
+<span class="comment">%CLOSESTPOINTONOBSTACLE returns closest point on the obstacle (create obstacle class)</span>
+<span class="comment">%input:</span>
+<span class="comment">%   C - ellipse parameter (nxn matrix)</span>
+<span class="comment">%   d - ellipse parameter (n vector)</span>
+<span class="comment">%   O - list of obstacles</span>
+<span class="comment">%   i - index of obstacle closest to the ellipse</span>
+<span class="comment">%output:</span>
+<span class="comment">%   x - point on obstacle O that is closest to the ellipse</span>
+
+V=O(:,:,i)';
+k=size(O,1); <span class="comment">% dimension of vertices</span>
+n=size(O,2); <span class="comment">% number of vertices</span>
+
+<span class="comment">% transform each vertex to the ball space</span>
+V_bar=inv(C)*(V-d);
+
+<span class="comment">% define and solve problem in cvx</span>
+cvx_begin <span class="string">quiet</span>
+    variable <span class="string">x_bar(n)</span> 
+    variable <span class="string">w(k)</span> <span class="string">nonnegative</span>
+    minimize(norm(x_bar))
+    subject <span class="string">to</span>
+        V_bar*w==x_bar;
+        sum(w)==1;
+cvx_end
+
+<span class="comment">% transform point back to ellipse space</span>
+x=C'*x_bar+d;
+
+<span class="keyword">end</span>
+
+</pre><p>The hyperplane that separates the obstacle and the ellipsoid must only intersect the boundary of obstacle <img src="main_eq07225361342133155126.png" alt="$j$"> and be tangent to the ellipsoid. The simplest way to calculate this is to consider the following representation of the ellipsoid:</p><p><img src="main_eq00719655910804096011.png" alt="$$\mathcal{E}=\{x|(x-d)^T C^{-1} C^{-1} (x-d) \leq 1\} $$">.</p><p>Then <img src="main_eq01271149068820142143.png" alt="$a_j$"> of the hyperplane is the gradient of the ellipsoid's barrier function at <img src="main_eq08097522164358817053.png" alt="$x^*$">:</p><p><img src="main_eq15532605253039431168.png" alt="$$a_j=2C^{-1}C^{-1}(x^*-d)$$"></p><p>Once <img src="main_eq01271149068820142143.png" alt="$a_j$"> is known, <img src="main_eq17167969172280778784.png" alt="$b_j$"> can be calculated as:</p><p><img src="main_eq02186333809352300081.png" alt="$$b_j=a_j^T x^*$$"></p><p>In practice, it is not necessary to calculate the separating hyperplane of every obstacle, the algorithm employs a few techniques to optimize the process:</p><div><ul><li>we run the solver for the above problem on the closest obstacle to the ellipsoid first</li><li>then after calculating the separating hyperplane, we exclude all the obstacles that are also separated from the ellipse by this hyperplane, before calculating the next hyperplane for the next closest obstacle</li></ul></div><p>From the above procedure, we find that not very many hyperplanes are needed to create an obstacle-free region. In our experiments, we have 80 obstacles and usually less than 10 hyperplanes are calculated. This matches the observation that [1] made about the number of hyperplanes needed.</p><h2 id="5">Part 2 - Calculate the inscribed ellipsoid</h2><p>Now that we have an obstacle-free polyhedral region, we must calculate the inscribed ellipsoid. This problem can be constructed as:</p><p><img vspace="5" hspace="5" src="inscribed_ellipsoid.png" alt=""> </p><p>We solved this problem using CVX. However, CVX cannot efficiently solve <img src="main_eq03807782655300296738.png" alt="$\log \det C$"> and the user guide [2] recommended using the det_rootn function instead:</p><pre class="language-matlab"><span class="comment">% Calculate the inscribed ellipsoid</span>
+sizeA = size(A);
+n = sizeA(2);
+m = sizeA(1);
+cvx_begin <span class="string">quiet</span>
+    variable <span class="string">C(n,n)</span> <span class="string">symmetric</span>
+    variable <span class="string">d(n)</span>
+    maximize( det_rootn( C ) )
+    subject <span class="string">to</span>
+       <span class="keyword">for</span> j = 1:m
+           norm( C*A(j,:)', 2 ) + A(j,:)*d &lt;= b(j);
+       <span class="keyword">end</span>
+cvx_end
+</pre><h2 id="6">Data Synthesis</h2><p>To illustrate the solution, we randomly generate triangles in a bounded space to simulate our environment with <a href="../generateTestdata.m">generateTestdata.m</a>. Triangles are convex, and many convex shapes can be further broken down into triangles. A sample environment is shown below.</p><p>We then select a spot, <img src="main_eq03948404395830138489.png" alt="$d_0$"> where we would like the obstacle-free region to be. The initial ellipsoid is a circle with a small radius around the specified coordinates.</p><pre class="codeinput">generateTestdata;
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%</span>
+<span class="comment">% This portion of the code converts the output of generateTestdata into a usable</span>
+<span class="comment">% format for further processing.</span>
+x = xv(1:3,:);
+y = yv(1:3,:);
+
+<span class="keyword">for</span> i=1:size(x,2)
+    O(:,:,i)=[x(:,i) y(:,i)];
+<span class="keyword">end</span>
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%</span>
+
+C = 0.01*[1 0; 0 1];    <span class="comment">% define small circle</span>
+d = zeros(1,2);
+[d(1),d(2)] = getpts;   <span class="comment">% get d_0, double click an empty spot on the figure</span>
+d = d';
+hold <span class="string">on</span>; plot(d(1),d(2),<span class="string">'xk'</span>);
+txt=<span class="string">'  d_0'</span>; text(d(1),d(2),txt);
+hold <span class="string">off</span>;
+</pre><img vspace="5" hspace="5" src="main_01.png" alt=""> <h2 id="7">Implemented Solution</h2><pre class="codeinput">num_iterations = 0;
+area = [det(C)];
+threshold = 0.01;
+growth = 100;
+
+<span class="keyword">while</span> growth &gt; threshold
+</pre><pre class="codeinput">    <span class="comment">% Calculate the separating hyperplanes (to find the obstacle-free</span>
+    <span class="comment">% polyhedral region)</span>
+    O_remaining = O;
+    num_vertices = size(O_remaining,1);
+    dim = size(O_remaining,2);
+    num_iterations = num_iterations + 1;
+    A = [];
+    b = [];
+    <span class="keyword">while</span> size(O_remaining,3) ~= 0  <span class="comment">% while O_remaining is not empty</span>
+        l_star = ClosestObstacle(C,d,O_remaining);
+        x_star = ClosestPointOnObstacle(C,d,O_remaining,l_star);
+        [a_i, b_i] = tangent( C,d,x_star );
+
+	<span class="comment">% add the new hyperplane to the polyhedral</span>
+        A = [A; a_i'];
+        b = [b; b_i];
+
+        O_excluded = [l_star]; <span class="comment">% indices of obstacles that the hyperplane a_i*x=b_i separates</span>
+        <span class="keyword">for</span> j = 1:size(O_remaining,3)
+            <span class="keyword">if</span> isequal(a_i'*O_remaining(:,:,j)'&gt;=b_i,ones(1,num_vertices))
+                <span class="comment">% if all of the obstacle vertices are on the other side of</span>
+                <span class="comment">% the hyperplane, then don't bother calculating a</span>
+                <span class="comment">% hyperplane for that obstacle</span>
+                O_excluded = [O_excluded, j];
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+
+        O_remaining(:,:,O_excluded) = [];
+    <span class="keyword">end</span>
+
+    prev_C=C;
+    prev_d=d;
+
+    <span class="comment">% Calculate the inscribed ellipsoid</span>
+    sizeA = size(A);
+    n = sizeA(2);
+    m = sizeA(1);
+    cvx_begin <span class="string">quiet</span>
+        variable <span class="string">C(n,n)</span> <span class="string">symmetric</span>
+        variable <span class="string">d(n)</span>
+        maximize( det_rootn( C ) )
+        subject <span class="string">to</span>
+           <span class="keyword">for</span> j = 1:m
+               norm( C*A(j,:)', 2 ) + A(j,:)*d &lt;= b(j);
+           <span class="keyword">end</span>
+    cvx_end
+
+    growth = (det(C) - det(prev_C))/det(prev_C);
+    area = [area det(C)];
+</pre><h2 id="9">Results</h2><p>Below is an illustration of the algorithm in action. For every iteration, the left graph shows the calculated polyhedral and the inscribed ellipsoid from the previous iteration. The right graph shows the newly inscribed ellipsoid based on the current polyhedral. Note that the ellipsoid only grows in every iteration, it does not shrink. Eventually, once the growth no longer exceeds the specified threshold, the algorithm ends. This behaviour matches that of figure 3 in [1].</p><pre class="codeinput">    theta = linspace(0,2*pi,200);
+    prev_ellipse_inner = prev_C*[cos(theta); sin(theta)]+prev_d;
+    ellipse_inner=C*[cos(theta); sin(theta)]+d;
+
+    points =poly2D(A,b)';
+    [k,av] = convhull(points);
+    v_x = points(:,1);
+    v_y = points(:,2);
+
+    figure(<span class="string">'Position'</span>,[0 0 850 325]);
+    subplot(1,2,1)
+        plot(xv,yv);
+        hold <span class="string">on</span>
+        plot(v_x(k), v_y(k), <span class="string">'bo-'</span>);
+        plot( prev_ellipse_inner(1,:), prev_ellipse_inner(2,:), <span class="string">'r--'</span> );
+        title([<span class="string">'Iteration '</span>,num2str(num_iterations)]);
+        axis <span class="string">square</span>;
+        hold <span class="string">off</span>;
+
+    subplot(1,2,2)
+        plot(xv,yv);
+        hold <span class="string">on</span>
+        plot(v_x(k), v_y(k), <span class="string">'bo-'</span>);
+        plot( ellipse_inner(1,:), ellipse_inner(2,:), <span class="string">'r--'</span> );
+        axis <span class="string">square</span>;
+        hold <span class="string">off</span>;
+</pre><img vspace="5" hspace="5" src="main_02.png" alt=""> <img vspace="5" hspace="5" src="main_03.png" alt=""> <img vspace="5" hspace="5" src="main_04.png" alt=""> <img vspace="5" hspace="5" src="main_05.png" alt=""> <img vspace="5" hspace="5" src="main_06.png" alt=""> <img vspace="5" hspace="5" src="main_07.png" alt=""> <pre class="codeinput"><span class="keyword">end</span>
+</pre><h2 id="11">Area of the ellipse for each iteration</h2><p>It can be seen in the figure below that the area of the ellipse increases for each iteration. Although the 2D environment is complicated with many obstacles, the algorithm is able to converge in several iterations.</p><pre class="codeinput">figure(<span class="string">'Position'</span>,[600 0 450 200]);
+    area = area*pi;
+
+    plot([0:1:size(area,2)-1],area);
+    xticks(0:1:size(area,2)-1);
+    grid <span class="string">on</span>;
+    ylabel(<span class="string">'Area'</span>);
+    xlabel(<span class="string">'Number of iterations'</span>);
+    title(<span class="string">'Area of the ellipse for each iteration'</span>);
+    snapnow;
+</pre><img vspace="5" hspace="5" src="main_08.png" alt=""> <h2 id="12">Analysis and Conclusions</h2><p>The advantages of this method is that it is computationally efficient. Even though the original problem is non-convex and complicated, the heuristic is able to turn the complicated problem into a convex optimization problem. Another reason for this efficiency is that we can neglect many redundant obstacles from the environment, using the properties of a convex polygon. This is extremely useful in real-time application such as robot motion planning.</p><p>The main disadvantage of this method is that it cannot guarantee that the returned solution is the largest, convex, obstacle-free region in the environment. However, for most non-convex optimization problems, it is very difficult to find the optimal solution. One thing to note is that the algorithm requires good initialization. In applications such as unmanned aerial vehicle path planning, we first need to compute the convex region to generate a good trajectory for the robot. Since the area is expanded without direction, this means that even though the algorithm can find a large convex region in the space,it may not be the largest space in the entire map since our algorithm depends on the initial point.</p><h2 id="13">References</h2><p>[1] R. Deits and R. Tedrake, &#8220;Computing large convex regions of obstacle-free space through semidefinite programming,&#8221; in Proceedings of the eleventh international workshop on the Algorithmic Foundations of Robotics, Istanbul, 2014.</p><p>[2] Grant, Michael C., and Stephen P. Boyd. "CVX Research, Inc." CVX: Matlab software for disciplined convex programming, cvxr. com/cvx (2013).</p><h2 id="14">Custom functions</h2><div><ul><li><a href="../main.m">main.m</a></li><li><a href="../generateTestdata.m">generateTestdata.m</a></li><li><a href="../ClosestObstacle.m">ClosestObstacle.m</a></li><li><a href="../ClosestPointOnObstacle.m">ClosestPointOnObstacle.m</a></li><li><a href="../tangent.m">tangent.m</a></li><li><a href="../poly2D.m">poly2D.m</a></li></ul></div><h2 id="15">External programs</h2><div><ul><li><a href="http://cvxr.com/cvx/">CVX solver</a></li></ul></div><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2018a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Computing Large Convex Regions of Obstacle-Free Space through SemiDefinite Programming
+% Report written by: Buu Phan and Florence Tsang
+%% Introduction to the Problem
+% In path planners for robots, it is often advantageous to be able to quickly identify
+% large regions of obstacle free space that the robot can freely move
+% through. This is especially important for robots that need to operate in
+% cluttered environments. The exploration of a solution to this problem by
+% [1] was largely motivated by the problem of finding obstacle-free regions
+% a bi-pedal robot could step on.
+% The proposed algorithm assumes that the environment consists of convex
+% obstacles, which is a reasonable assumption since there are many methods
+% available to decompose obstacles into convex shapes. A high level of
+% detail is not needed. It also assumes that there will be a human operator
+% (or another algorithm)
+% to help select the general location of where this obstacle-free region
+% should be.
+%
+% Although we only show the 2D implementation of this algorithm, it is applicable in 3D
+% space as well.
+%% Problem Formulation
+% The general algorithm consists of simultaneously maximizing a polyhedral
+% and an inscribed ellipsoid in the specified location.
+% The polyhedral is composed of the intersection of multiple halfspaces:
+% $P=\{x|Ax\leq b\}$ and the ellipsoid is represented as an image of an
+% euclidean unit ball: $$\mathcal{E}(C,d)=\{x=C\tilde{x}+d|\|\tilde{x}\|_2\leq
+% 1\} $$. Given this, we are attempting to solve the following problem:
+%
+% <<primal_problem.png>>
+%
+% The objective function describes how 'big' the ellipsoid is. By
+% maximizing the inscribed ellipsoid, we are by proxy, maximizing the
+% polyhedral that contains the obstacle-free space.
+% The first constraint prevents the polyhedral from containing any vertices
+% of all obstacles, as none of their vertices should lie in the polyhedral.
+% The second constraint ensures that the ellipsoid does not extend past the
+% polyhedral.
+%% Proposed Solution
+% Instead of directly solving the above problem, which is non-convex, [1] proposes to
+% iteratively find an obstacle-free polyhedral, find the maximal inscribed
+% ellipsoid, and repeat until the ellipsoid no longer grows more than a
+% specified threshold. [1] has nicknamed this procedure as IRIS (Iterative Regional
+% Inflation by Semidefinite Programming). Even though IRIS does not guarantee it will find
+% the largest obstacle-free convex space in a given environment, it does guarantee
+% convergence if the environment is bounded. Because the ellipsoid will not increase past
+% the environment boundaries. 
+%
+% The solution has two major parts: 1) Find the hyperplanes that separate
+% the given ellipsoid from all the obstacles (resulting in an obstacle-free
+% polyhedral), and 2) find the inscribed ellipsoid in this polyhedral.
+% This procedure will be repeated until the growth of the ellipsoid falls below our
+% specified threshold. Growth is measured by:
+%
+% $$growth=\frac{\det C_i - \det C_{i-1}}{\det C_{i-1}}$$
+%
+% Where $C_i$ defines the newly inscribed ellipsoid and $C_{i-1}$ defines the inscribed
+% ellipsoid from the previous iteration. $\det C$ is linearly related to the area, thus
+% changes in $\det C$ is proportional to the change in area of the ellipsoid. 
+%
+% More details of each portion of the solutions are given in the following sections.
+%
+%%% Part 1 - Find separating hyperplanes
+% Given an ellipsoid defined by $Cx+d$, we need to find the closest point _x_star_ to
+% the ellipsoid from the given set of obstacles, then define a hyperplane that separates
+% the ellipsoid and the obstacle that _x_star_ is on. 
+%
+% Since the ellipsoid is defined as an
+% image of the unit ball, the inverse of this image can be defined as:
+% 
+% <<transformed_spaces.png>>
+%
+% After this transformation, the closest point on an obstacle to the ellipsoid in the
+% ellipse space,
+% will be the closest point to the origin in the ball space. This problem can be
+% formally constructed in the following way:
+%
+% <<min_distance_problem.png>>
+%
+% The constraints state that $\tilde{x}$ must be a convex combination of the
+% vertices in obstacle $j$. It ensures that $\tilde{x}$ must be in the closure of
+% obstacle $j$ while minimizing the norm of $\tilde{x}$. This results in the optimal
+% point $\tilde{x}^*$. Then we simply transform it back into the ellipse space using
+% $x^*=C\tilde{x}^*+d$.     
+%
+% We define the problem in cvx as follows:
+%
+% <include>ClosestPointOnObstacle.m</include>
+% 
+% The hyperplane that separates the obstacle and the ellipsoid must only intersect the
+% boundary of obstacle $j$ and be tangent to the ellipsoid. The simplest way to
+% calculate this is to consider the following representation of the ellipsoid:
+%
+% $$\mathcal{E}=\{x|(x-d)^T C^{-1} C^{-1} (x-d) \leq 1\} $$.
+% 
+% Then $a_j$ of the hyperplane is the gradient of the ellipsoid's barrier function at
+% $x^*$:
+%
+% $$a_j=2C^{-1}C^{-1}(x^*-d)$$
+% 
+% Once $a_j$ is known, $b_j$ can be calculated as:
+%
+% $$b_j=a_j^T x^*$$
+%
+% In practice, it is not necessary to calculate the separating hyperplane of every
+% obstacle, the algorithm employs a few techniques to optimize the process:
+%
+% * we run the solver for the above problem on the closest obstacle to the ellipsoid
+% first
+% * then after calculating the separating hyperplane, we exclude all the obstacles
+% that are also separated from the ellipse by this hyperplane, before calculating the
+% next hyperplane for the next closest obstacle
+%
+% From the above procedure, we find that not very many hyperplanes are needed to
+% create an obstacle-free region. In our experiments, we have 80 obstacles and usually
+% less than 10 hyperplanes are calculated. This matches the observation that [1] made
+% about the number of hyperplanes needed.
+%%% Part 2 - Calculate the inscribed ellipsoid
+% Now that we have an obstacle-free polyhedral region, we must calculate
+% the inscribed ellipsoid. This problem can be constructed as:
+%
+% <<inscribed_ellipsoid.png>>
+%
+% We solved this problem using CVX. However, CVX cannot efficiently solve
+% $\log \det C$ and the user guide [2] recommended using the det_rootn
+% function instead: 
+%
+%   % Calculate the inscribed ellipsoid
+%   sizeA = size(A);
+%   n = sizeA(2);
+%   m = sizeA(1);
+%   cvx_begin quiet
+%       variable C(n,n) symmetric
+%       variable d(n)
+%       maximize( det_rootn( C ) )
+%       subject to            
+%          for j = 1:m
+%              norm( C*A(j,:)', 2 ) + A(j,:)*d <= b(j);
+%          end
+%   cvx_end
+%% Data Synthesis
+% To illustrate the solution, we randomly generate triangles in a bounded space to simulate our
+% environment with <../generateTestdata.m generateTestdata.m>. Triangles are convex, and many convex shapes can be further
+% broken down into triangles. A sample environment is shown below.
+%
+% We then select a spot, $d_0$ where we would like the
+% obstacle-free region to be. The initial ellipsoid is a circle with a small
+% radius around the specified coordinates.
+
+generateTestdata;
+%%%%%%%%%%%%%%%%%%%%%%
+% This portion of the code converts the output of generateTestdata into a usable
+% format for further processing.
+x = xv(1:3,:);
+y = yv(1:3,:);
+
+for i=1:size(x,2)
+    O(:,:,i)=[x(:,i) y(:,i)];
+end
+%%%%%%%%%%%%%%%%%%%%%%
+
+C = 0.01*[1 0; 0 1];    % define small circle
+d = zeros(1,2);
+[d(1),d(2)] = getpts;   % get d_0, double click an empty spot on the figure
+d = d';
+hold on; plot(d(1),d(2),'xk');
+txt='  d_0'; text(d(1),d(2),txt); 
+hold off;
+
+%% Implemented Solution
+
+num_iterations = 0;
+area = [det(C)];
+threshold = 0.01;
+growth = 100;
+
+while growth > threshold
+    % Calculate the separating hyperplanes (to find the obstacle-free
+    % polyhedral region)
+    O_remaining = O;
+    num_vertices = size(O_remaining,1);
+    dim = size(O_remaining,2);
+    num_iterations = num_iterations + 1;
+    A = [];
+    b = [];
+    while size(O_remaining,3) ~= 0  % while O_remaining is not empty
+        l_star = ClosestObstacle(C,d,O_remaining);
+        x_star = ClosestPointOnObstacle(C,d,O_remaining,l_star);
+        [a_i, b_i] = tangent( C,d,x_star );
+
+	% add the new hyperplane to the polyhedral
+        A = [A; a_i']; 
+        b = [b; b_i];
+
+        O_excluded = [l_star]; % indices of obstacles that the hyperplane a_i*x=b_i separates
+        for j = 1:size(O_remaining,3)
+            if isequal(a_i'*O_remaining(:,:,j)'>=b_i,ones(1,num_vertices))
+                % if all of the obstacle vertices are on the other side of
+                % the hyperplane, then don't bother calculating a
+                % hyperplane for that obstacle
+                O_excluded = [O_excluded, j];
+            end
+        end
+
+        O_remaining(:,:,O_excluded) = [];
+    end
+
+    prev_C=C;
+    prev_d=d;
+    
+    % Calculate the inscribed ellipsoid
+    sizeA = size(A);
+    n = sizeA(2);
+    m = sizeA(1);
+    cvx_begin quiet
+        variable C(n,n) symmetric
+        variable d(n)
+        maximize( det_rootn( C ) )
+        subject to            
+           for j = 1:m
+               norm( C*A(j,:)', 2 ) + A(j,:)*d <= b(j);
+           end
+    cvx_end
+    
+    growth = (det(C) - det(prev_C))/det(prev_C);
+    area = [area det(C)];
+    
+    %% Results
+    % Below is an illustration of the algorithm in action. For every
+    % iteration, the left graph shows the calculated polyhedral and the
+    % inscribed ellipsoid from the previous iteration. The right graph
+    % shows the newly inscribed ellipsoid based on the current polyhedral.
+    % Note that the ellipsoid only grows in every iteration, it does not
+    % shrink. Eventually, once the growth no longer exceeds the specified
+    % threshold, the algorithm ends.
+    % This behaviour matches that of figure 3 in [1].
+    
+    theta = linspace(0,2*pi,200);
+    prev_ellipse_inner = prev_C*[cos(theta); sin(theta)]+prev_d;
+    ellipse_inner=C*[cos(theta); sin(theta)]+d; 
+    
+    points =poly2D(A,b)';
+    [k,av] = convhull(points);
+    v_x = points(:,1);
+    v_y = points(:,2);
+    
+    figure('Position',[0 0 850 325]);
+    subplot(1,2,1)
+        plot(xv,yv);
+        hold on
+        plot(v_x(k), v_y(k), 'bo-');
+        plot( prev_ellipse_inner(1,:), prev_ellipse_inner(2,:), 'rREPLACE_WITH_DASH_DASH' );
+        title(['Iteration ',num2str(num_iterations)]);
+        axis square;
+        hold off;
+        
+    subplot(1,2,2)
+        plot(xv,yv);
+        hold on
+        plot(v_x(k), v_y(k), 'bo-');
+        plot( ellipse_inner(1,:), ellipse_inner(2,:), 'rREPLACE_WITH_DASH_DASH' );
+        axis square;
+        hold off;
+        
+end
+%%% Area of the ellipse for each iteration
+% It can be seen in the figure below that the area of the ellipse increases for
+% each iteration. Although the 2D environment is complicated with many
+% obstacles, the algorithm is able to converge in several iterations. 
+figure('Position',[600 0 450 200]);
+    area = area*pi;
+    
+    plot([0:1:size(area,2)-1],area);
+    xticks(0:1:size(area,2)-1);
+    grid on;
+    ylabel('Area');
+    xlabel('Number of iterations');
+    title('Area of the ellipse for each iteration');
+    snapnow;
+    
+%% Analysis and Conclusions
+% The advantages of this method is that it is computationally efficient. Even though the original problem is non-convex and complicated, the heuristic is able to turn the complicated problem into a convex optimization problem. 
+% Another reason for this efficiency is that we can neglect many redundant obstacles from the environment, using the properties of a convex polygon. This is extremely useful in real-time application such as robot motion planning. 
+%  
+% The main disadvantage of this method is that it cannot guarantee that the returned solution is the largest, convex, obstacle-free region in the environment. However, for most non-convex optimization problems, it is very difficult to find the optimal solution. 
+% One thing to note is that the algorithm requires good initialization. In applications such as unmanned aerial vehicle path planning, we first need to compute the convex region to generate a good trajectory for the robot. Since the
+% area is expanded without direction, this means that even though the algorithm can find a large convex region in the space,it may not be the largest space in the entire map since our algorithm depends on the initial point.
+%
+%% References
+% [1] R. Deits and R. Tedrake, “Computing large convex regions of obstacle-free space through semidefinite programming,” in
+% Proceedings of the eleventh international workshop on the Algorithmic Foundations of Robotics, Istanbul, 2014.
+%
+% [2] Grant, Michael C., and Stephen P. Boyd. "CVX Research, Inc." CVX: Matlab software for disciplined convex programming, cvxr. com/cvx (2013).
+
+%% Custom functions
+%
+% * <../main.m main.m>
+% * <../generateTestdata.m generateTestdata.m>
+% * <../ClosestObstacle.m ClosestObstacle.m>
+% * <../ClosestPointOnObstacle.m ClosestPointOnObstacle.m>
+% * <../tangent.m tangent.m>
+% * <../poly2D.m poly2D.m>
+%
+%% External programs
+% * <http://cvxr.com/cvx/ CVX solver>
+
+##### SOURCE END #####
+--></body></html>
